@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Test WebSocket Client</title>
+</head>
+<body>
+    <div id="box">
+    </div>
+    <script>
+        ws = new WebSocket('ws://127.0.0.1:8888');
+        ws.onmessage = function(event) {
+            var box = document.getElementById('box')
+            box.innerHTML = box.innerHTML + ' ' + event.data + '<br />';
+        }
+        function sendInInterval(){
+            setInterval(function(){ws.send('client test message')}, 3000);
+        }
+        setTimeout(sendInInterval, 4000);
+    </script>
+</body>
+</html>
