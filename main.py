@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 
 class Settings:
-    HOST = '127.0.0.1'
+    HOST = "127.0.0.1"
     PORT = 8888
 
 
@@ -18,7 +18,7 @@ def main():
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
     coro = loop.create_server(WebSocketServer, Settings.HOST, Settings.PORT)
-    log.info('start server on {}:{}'.format(Settings.HOST, Settings.PORT))
+    log.info("start server on {}:{}".format(Settings.HOST, Settings.PORT))
     server = loop.run_until_complete(coro)
     try:
         loop.run_forever()
@@ -31,5 +31,5 @@ def main():
     sys.exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

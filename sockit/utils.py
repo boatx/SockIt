@@ -3,7 +3,7 @@ from io import BytesIO
 
 
 class HTTPRequest(BaseHTTPRequestHandler):
-    def __init__(self, request_text=b''):
+    def __init__(self, request_text=b""):
         self.rfile = BytesIO(request_text)
         self.raw_requestline = self.rfile.readline()
         self.error_code = None
