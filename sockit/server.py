@@ -37,8 +37,7 @@ class WebSocketServer(asyncio.Protocol):
         self.transport = transport
         log.info("Connection from {}".format(self.peername))
         self.initialised = False
-        self._future = asyncio.async(self.writer())
-        asyncio.wait_for(self._future, 60)
+        self._future = asyncio.ensure_future(self.writer())
 
     def finalise_handshake(self, data):
         request = HTTPRequest(data)
