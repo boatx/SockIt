@@ -14,7 +14,7 @@ class Settings:
     PORT = 8888
 
 
-def main():
+def main() -> None:
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
     coro = loop.create_server(WebSocketServer, Settings.HOST, Settings.PORT)
