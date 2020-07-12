@@ -28,7 +28,7 @@ class WebsocketHeader(ctypes.Union):
     _anonymous_ = ("_bits",)
     _fields_ = [("_bits", _FlagBits), ("_as_byte", ctypes.c_char * 2)]
 
-    def __init__(self, data: Optional[bytes] = b""):
+    def __init__(self, data: bytes = b"") -> None:
         self._as_byte = data[0:2]
 
     def __str__(self) -> str:
@@ -36,7 +36,7 @@ class WebsocketHeader(ctypes.Union):
 
 
 class WebsocketRequest:
-    def __init__(self, data: bytes):
+    def __init__(self, data: bytes) -> None:
         self.header = WebsocketHeader(data)
         log.info(f"Received request: {self.header}")
         self.data = data
@@ -51,7 +51,7 @@ class WebsocketRequest:
 
         raise NotImplementedError()
 
-    def _get_mask(self) -> bytes:
+    def _get_mask(self) -> Optional[bytes]:
         if not self.header.mask:
             return None
         end_byte = self.start_byte + 4
@@ -62,18 +62,16 @@ class WebsocketRequest:
     def payload(self) -> bytes:
         end_byte = self.length + self.start_byte
         payload = self.data[self.start_byte : end_byte]
-        if self.mask:
-            return [self.mask[i % 4] ^ b for i, b in enumerate(payload)]
-        return payload
+        if not self.mask:
+            return payload
+        bytes_list = (self.mask[i % 4] ^ b for i, b in enumerate(payload))
+        return b"".join((i.to_bytes(1, "big") for i in bytes_list))
 
 
 class WebsocketResponse:
-    def __init__(self, payload: str):
+    def __init__(self, payload: str) -> None:
         self.payload = payload.encode()
         self.header = self._get_header()
-
-    def _get_length(self) -> int:
-        raise NotImplementedError()
 
     def _get_header(self) -> WebsocketHeader:
         header = WebsocketHeader()
@@ -83,5 +81,5 @@ class WebsocketResponse:
         header.mask = 0
         return header
 
-    def response(self) -> str:
+    def response(self) -> bytes:
         return self.header._as_byte + self.payload

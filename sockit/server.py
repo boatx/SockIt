@@ -3,7 +3,9 @@ import base64
 import hashlib
 import logging
 import time
-from asyncio.selector_events import _SelectorSocketTransport
+from asyncio import Future
+from asyncio.transports import Transport
+from typing import Optional
 
 from sockit.utils import HTTPRequest
 from sockit.websockets import WebsocketRequest, WebsocketResponse
@@ -13,33 +15,53 @@ log = logging.getLogger(__name__)
 
 _minimal_http_version = "1.1"
 _magic_string = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
-_accept_connection_response_template = """HTTP/1.1 101 Switching Protocols\r
-Upgrade: websocket\r
-Connection: Upgrade\r
-Sec-WebSocket-Accept: {}\r\n\r\n"""
+_accept_connection_response_template = (
+    "HTTP/1.1 101 Switching Protocols\r\n"
+    "Upgrade: websocket\r\n"
+    "Connection: Upgrade\r\n"
+    "Sec-WebSocket-Accept: {}\r\n\r\n"
+)
+
+
+class InvalidSecWebsocketKey(Exception):
+    pass
 
 
 def generate_sec_server_accept_key(sec_client_key: str) -> str:
     sec_server_accept_key = f"{sec_client_key}{_magic_string}"
-    sec_server_accept_key = hashlib.sha1(sec_server_accept_key.encode())
-    return base64.b64encode(sec_server_accept_key.digest()).decode()
+    sec_server_accept_key_hash = hashlib.sha1(sec_server_accept_key.encode())
+    return base64.b64encode(sec_server_accept_key_hash.digest()).decode()
 
 
 def generate_handshake_response(request: HTTPRequest) -> bytes:
+    sec_websocket_key = request.headers["Sec-WebSocket-Key"]
+    if not sec_websocket_key:
+        raise InvalidSecWebsocketKey()
     sec_client_key = request.headers["Sec-WebSocket-Key"]
     sec_server_key = generate_sec_server_accept_key(sec_client_key)
     return _accept_connection_response_template.format(sec_server_key).encode()
 
 
 class WebSocketServer(asyncio.Protocol):
-    def connection_made(self, transport: _SelectorSocketTransport) -> None:
-        self.peername = transport.get_extra_info("peername")
-        log.info(f"Connection from {self.peername}")
+    def __init__(self) -> None:
+        self.initialised: bool = False
+        self.transport: Optional[Transport] = None
+        self._future: Optional[Future[None]] = None
+
+    def connection_made(self, transport: Transport) -> None:  # type: ignore
         self.transport = transport
-        self.initialised = False
+        log.info(f"Connection from {self.peername}")
         self._future = asyncio.ensure_future(self.writer())
 
+    @property
+    def peername(self) -> Optional[str]:
+        if self.transport:
+            return self.transport.get_extra_info("peername")
+        return None
+
     def finalise_handshake(self, data: bytes) -> None:
+        if not self.transport:
+            return
         request = HTTPRequest(data)
         response = generate_handshake_response(request)
         self.transport.write(response)
@@ -51,16 +73,19 @@ class WebSocketServer(asyncio.Protocol):
             return
         request = WebsocketRequest(data)
         payload = request.payload()
-        payload = "".join([chr(i) for i in payload])
-        log.info(f"Received data: {payload}")
+        log.info(f"Received data: {payload.decode()}")
 
-    def connection_lost(self, exc: Exception) -> None:
+    def connection_lost(self, exc: Optional[Exception]) -> None:
         log.info(f"Connection from {self.peername} close")
         log.warning(f"exc={exc}")
-        self._future.cancel()
-        self.transport.close()
+        if self._future:
+            self._future.cancel()
+        if self.transport:
+            self.transport.close()
 
     async def writer(self) -> None:
+        if not self.transport:
+            return
         try:
             while True:
                 if self.initialised:
@@ -68,6 +93,6 @@ class WebSocketServer(asyncio.Protocol):
                     response = WebsocketResponse(message).response()
                     self.transport.write(response)
                 await asyncio.sleep(5)
-        except Exception as e:
-            log.error(f"{e} {e.msg}")
+        except Exception as exc:
+            log.error(exc)
             self.transport.close()

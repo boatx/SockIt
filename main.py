@@ -1,9 +1,8 @@
-import sys
 import asyncio
 import logging
+import sys
 
 from sockit.server import WebSocketServer
-
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 log = logging.getLogger(__name__)
