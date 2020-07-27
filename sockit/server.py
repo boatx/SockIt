@@ -51,7 +51,6 @@ class WebSocketServer(asyncio.Protocol):
     def connection_made(self, transport: Transport) -> None:  # type: ignore
         self.transport = transport
         log.info(f"Connection from {self.peername}")
-        self._future = asyncio.ensure_future(self.writer())
 
     @property
     def peername(self) -> Optional[str]:
@@ -61,16 +60,16 @@ class WebSocketServer(asyncio.Protocol):
 
     def finalise_handshake(self, data: bytes) -> None:
         if not self.transport:
-            return
+            return None
         request = HTTPRequest(data)
         response = generate_handshake_response(request)
         self.transport.write(response)
         self.initialised = True
+        self._future = asyncio.ensure_future(self.writer(self.transport))
 
     def data_received(self, data: bytes) -> None:
         if not self.initialised:
-            self.finalise_handshake(data)
-            return
+            return self.finalise_handshake(data)
         request = WebsocketRequest(data)
         payload = request.payload()
         log.info(f"Received data: {payload.decode()}")
@@ -83,16 +82,13 @@ class WebSocketServer(asyncio.Protocol):
         if self.transport:
             self.transport.close()
 
-    async def writer(self) -> None:
-        if not self.transport:
-            return
+    async def writer(self, transport: Transport) -> None:
         try:
             while True:
-                if self.initialised:
-                    message = f"server message: {time.time()}"
-                    response = WebsocketResponse(message).response()
-                    self.transport.write(response)
+                message = f"server message: {time.time()}"
+                response = WebsocketResponse(message).response()
+                transport.write(response)
                 await asyncio.sleep(5)
         except Exception as exc:
             log.error(exc)
-            self.transport.close()
+            transport.close()

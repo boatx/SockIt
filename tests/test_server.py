@@ -40,14 +40,14 @@ class TestWebsocketServer:
             mock.return_value = response
             yield response
 
-    def test_connection_made(self, future: Mock, transport: Mock) -> None:
+    def test_connection_made(self, transport: Mock) -> None:
         server = WebSocketServer()
 
         server.connection_made(transport)
 
         assert server.initialised is False
         assert server.transport == transport
-        assert server._future == future
+        assert server._future is None
 
     def test_peername_return_none(self) -> None:
         server = WebSocketServer()
@@ -63,7 +63,7 @@ class TestWebsocketServer:
 
         assert server.peername == "test-peer"
 
-    def test_finalise_handshake_when_transport_is_none(self,) -> None:
+    def test_finalise_handshake_when_transport_is_none(self) -> None:
         server = WebSocketServer()
 
         server.finalise_handshake(b"12345")
