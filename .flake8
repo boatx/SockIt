@@ -1,0 +1,6 @@
+[flake8]
+ignore = E203,ANN101,ANN102
+known_first_party = sockit,tests
+max-complexity = 10
+per-file-ignores = tests/*:S101
+select = ANN,BLK,B,C,E,F,W,I
