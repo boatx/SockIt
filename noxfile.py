@@ -4,7 +4,7 @@ from typing import Any
 import nox
 from nox.sessions import Session
 
-PYTHON_VERSIONS = ("3.8", "3.7")
+PYTHON_VERSIONS = ("3.8", "3.7", "3.6")
 LOCATIONS = ("noxfile.py", "tests", "sockit")
 
 nox.options.sessions = ("lint", "mypy", "pytype", "tests")
