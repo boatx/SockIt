@@ -46,10 +46,15 @@ class WebsocketRequest:
 
     def _get_length(self) -> int:
         length = self.header.payload_length
-        if length < 126:
+        if length <= 125:
             return length
-
-        raise NotImplementedError()
+        if length == 126:
+            self.start_byte = 4
+            return int.from_bytes(self.data[2:4], byteorder="big")
+        if length == 127:
+            self.start_byte = 10
+            return int.from_bytes(self.data[2:10], byteorder="big")
+        raise ValueError("Invalid Header")
 
     def _get_mask(self) -> Optional[bytes]:
         if not self.header.mask:
