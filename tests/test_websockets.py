@@ -1,3 +1,6 @@
+from typing import Any, NamedTuple
+from unittest.mock import create_autospec
+
 import pytest
 
 from sockit.websockets import (
@@ -5,6 +8,40 @@ from sockit.websockets import (
     WebsocketRequest,
     WebsocketResponse,
 )
+
+
+def _get_header(header_length: int, mask: int = 0) -> WebsocketHeader:
+    header = WebsocketHeader()
+    header.fin = 1
+    header.opcode = 1
+    header.payload_length = header_length
+    header.mask = mask
+    return header
+
+
+class WebsocketMessageFixture(NamedTuple):
+    data: bytes
+    payload: str
+    payload_length_bytes: bytes
+    header: WebsocketHeader
+
+
+@pytest.fixture(
+    params=[
+        (4, 4, b""),
+        (125, 125, b""),
+        (126, 126, int.to_bytes(126, 2, "big")),
+        (65535, 126, int.to_bytes(65535, 2, "big")),
+        (65536, 127, int.to_bytes(65536, 8, "big")),
+    ],
+    ids=lambda fixture_value: f"{fixture_value[0]} character message",
+)
+def websocket_message(request: Any) -> WebsocketMessageFixture:
+    payload_length, header_length, payload_length_bytes = request.param
+    header = _get_header(header_length)
+    payload = "".join(("x" for _ in range(payload_length)))
+    data = header._as_byte + payload_length_bytes + payload.encode()
+    return WebsocketMessageFixture(data, payload, payload_length_bytes, header)
 
 
 class TestWebsocketHeader:
@@ -46,7 +83,7 @@ class TestWebsocketHeader:
 class TestWebsocketRequest:
     @pytest.fixture()
     def header(self) -> bytes:
-        return int.to_bytes(0b01000000110010011, 2, "big")
+        return _get_header(19, 1)._as_byte
 
     @pytest.fixture()
     def data(self, header: bytes) -> bytes:
@@ -60,11 +97,6 @@ class TestWebsocketRequest:
         assert request.data == data
         assert request.mask == data[2:6]
         assert request.start_byte == 6
-
-    def test_get_length(self, data: bytes) -> None:
-        request = WebsocketRequest(data)
-
-        assert request._get_length() == 19
         assert request.length == 19
 
     def test_get_payload(self, data: bytes) -> None:
@@ -72,29 +104,43 @@ class TestWebsocketRequest:
 
         assert request.payload() == b"client test message"
 
+    def test_get_length(
+        self, websocket_message: WebsocketMessageFixture
+    ) -> None:
+        request = WebsocketRequest(websocket_message.data)
+        length = len(websocket_message.payload)
+
+        assert request._get_length() == length
+        assert request.length == length
+
+    def test_get_length_raise_value_error_for_invalid_header_payload_length(
+        self, data: bytes
+    ) -> None:
+        request = WebsocketRequest(data)
+        request.header = create_autospec(
+            request.header, spec_set=True, payload_length=129
+        )
+
+        with pytest.raises(ValueError):
+            request._get_length()
+
 
 class TestWebsocketResponse:
-    @pytest.fixture()
-    def header(self) -> bytes:
-        _header = 0b1000000100000100
-        return _header.to_bytes(2, "big")
-
     def test_response_payload(self) -> None:
         response = WebsocketResponse("test")
 
         assert response.payload == b"test"
 
-    def test_response_header(self, header: bytes) -> None:
-        payload = "test"
+    def test_response_header(
+        self, websocket_message: WebsocketMessageFixture
+    ) -> None:
+        response = WebsocketResponse(websocket_message.payload)
 
-        response = WebsocketResponse(payload)
+        assert response.header._as_byte == websocket_message.header._as_byte
 
-        assert response.header._as_byte == header
+    def test_response(
+        self, websocket_message: WebsocketMessageFixture
+    ) -> None:
+        response = WebsocketResponse(websocket_message.payload)
 
-    def test_response(self, header: bytes) -> None:
-        payload = "test"
-        expected_response = header + payload.encode()
-
-        response = WebsocketResponse(payload)
-
-        assert response.response() == expected_response
+        assert response.response() == websocket_message.data
