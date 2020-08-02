@@ -1,5 +1,6 @@
 # SockIt
 [![Tests](https://github.com/boatx/SockIt/workflows/Tests/badge.svg)](https://github.com/boatx/SockIt/actions?workflow=Tests)
+[![GitHub license](https://img.shields.io/github/license/boatx/SockIt)](https://github.com/boatx/SockIt/blob/master/LICENSE)
 
 Simple websocket server implementation, created for educational purposes. No
 external modules required.
@@ -18,4 +19,4 @@ To test server you can use simple JavaScript client from `client/client.html`.
 
 ## Requirements
 
-* python => 3.7
+* python => 3.6
