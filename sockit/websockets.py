@@ -1,6 +1,6 @@
 import ctypes
 import logging
-from typing import Optional
+from typing import NamedTuple, Optional
 
 log = logging.getLogger(__name__)
 
@@ -48,8 +48,13 @@ class WebsocketRequest:
         length = self.header.payload_length
         if length < 126:
             return length
-
-        raise NotImplementedError()
+        if length == 126:
+            self.start_byte = 4
+            return int.from_bytes(self.data[2:4], byteorder="big")
+        if length == 127:
+            self.start_byte = 10
+            return int.from_bytes(self.data[2:10], byteorder="big")
+        raise ValueError("Invalid Header")
 
     def _get_mask(self) -> Optional[bytes]:
         if not self.header.mask:
@@ -68,18 +73,32 @@ class WebsocketRequest:
         return b"".join((i.to_bytes(1, "big") for i in bytes_list))
 
 
+class Length(NamedTuple):
+    header: int
+    as_byte: bytes
+
+
 class WebsocketResponse:
     def __init__(self, payload: str) -> None:
         self.payload = payload.encode()
+        self.length = self._get_length()
         self.header = self._get_header()
 
     def _get_header(self) -> WebsocketHeader:
         header = WebsocketHeader()
         header.fin = 1
         header.opcode = 1
-        header.payload_length = len(self.payload)
+        header.payload_length = self.length.header
         header.mask = 0
         return header
 
+    def _get_length(self) -> Length:
+        length = len(self.payload)
+        if length < 126:
+            return Length(length, b"")
+        if length < 65536:
+            return Length(126, length.to_bytes(2, "big"))
+        return Length(127, length.to_bytes(8, "big"))
+
     def response(self) -> bytes:
-        return self.header._as_byte + self.payload
+        return self.header._as_byte + self.length.as_byte + self.payload
