@@ -4,21 +4,23 @@ from typing import Any
 import nox
 from nox.sessions import Session
 
-PYTHON_VERSIONS = ("3.8", "3.7", "3.6")
+PYTHON_VERSIONS = ("3.8", "3.7")
 LOCATIONS = ("noxfile.py", "tests", "sockit")
 
 nox.options.sessions = ("lint", "mypy", "pytype", "tests")
 
 
 def install_with_constraints(
-    session: Session, *args: str, **kwargs: Any
+    session: Session, *args: str, **kwargs: Any  # noqa: ANN401
 ) -> None:
     with tempfile.NamedTemporaryFile() as requirements:
         session.run(
             "poetry",
             "export",
-            "--dev",
-            "--format=requirements.txt",
+            "--with",
+            "dev",
+            "--without-hashes",
+            "--format=constraints.txt",
             f"--output={requirements.name}",
             external=True,
         )
@@ -28,7 +30,7 @@ def install_with_constraints(
 @nox.session(python=PYTHON_VERSIONS)
 def tests(session: Session) -> None:
     args = session.posargs or ["--cov"]
-    session.run("poetry", "install", "--no-dev", external=True)
+    session.run("poetry", "install", "--only", "main", external=True)
     install_with_constraints(session, "coverage[toml]", "pytest", "pytest-cov")
     session.run("pytest", *args)
 

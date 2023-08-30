@@ -36,7 +36,7 @@ class WebsocketMessageFixture(NamedTuple):
     ],
     ids=lambda fixture_value: f"{fixture_value[0]} character message",
 )
-def websocket_message(request: Any) -> WebsocketMessageFixture:
+def websocket_message(request: Any) -> WebsocketMessageFixture:  # noqa: ANN401
     payload_length, header_length, payload_length_bytes = request.param
     header = _get_header(header_length)
     payload = "".join(("x" for _ in range(payload_length)))
