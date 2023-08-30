@@ -5,18 +5,18 @@ description = ""
 authors = ["boatx <1446337+boatx@users.noreply.github.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.6"
+python = "^3.7"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.4.3"
 coverage = {extras = ["toml"], version = "^5.2"}
 pytest-cov = "^2.10.0"
 black = "^19.10b0"
-flake8 = "^3.8.3"
-flake8-bandit = "^2.1.2"
+flake8 = "^5.0.0"
+flake8-bandit = "^4.1.1"
 flake8-black = "^0.2.0"
 flake8-bugbear = "^20.1.4"
-flake8-isort = "^3.0.1"
+flake8-isort = "^6.0.0"
 mypy = "^0.782"
 pytype = {version = "^2020.7.14", python = "3.7"}
 flake8-annotations = "^2.3.0"
