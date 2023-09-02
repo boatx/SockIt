@@ -10,7 +10,7 @@ from typing import Optional
 from sockit.utils import HTTPRequest
 from sockit.websockets import WebsocketRequest, WebsocketResponse
 
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 _minimal_http_version = "1.1"
@@ -50,7 +50,7 @@ class WebSocketServer(asyncio.Protocol):
 
     def connection_made(self, transport: Transport) -> None:  # type: ignore
         self.transport = transport
-        log.info(f"Connection from {self.peername}")
+        LOGGER.info("Connection from %s", self.peername)
 
     @property
     def peername(self) -> Optional[str]:
@@ -72,11 +72,11 @@ class WebSocketServer(asyncio.Protocol):
             return self.finalise_handshake(data)
         request = WebsocketRequest(data)
         payload = request.payload()
-        log.info(f"Received data: {payload.decode()}")
+        LOGGER.info("Received data: %s", payload.decode())
 
     def connection_lost(self, exc: Optional[Exception]) -> None:
-        log.info(f"Connection from {self.peername} close")
-        log.warning(f"exc={exc}")
+        LOGGER.info("Connection from %s close", self.peername)
+        LOGGER.warning("exc=%s", exc)
         if self._future:
             self._future.cancel()
         if self.transport:
@@ -89,6 +89,6 @@ class WebSocketServer(asyncio.Protocol):
                 response = WebsocketResponse(message).response()
                 transport.write(response)
                 await asyncio.sleep(5)
-        except Exception as exc:
-            log.error(exc)
+        except Exception:
+            LOGGER.exception("Error, closing")
             transport.close()
