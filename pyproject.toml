@@ -36,10 +36,7 @@ show_missing = true
 known_first_party = ["sockit", "tests"]
 default_section = "THIRDPARTY"
 # black compatible settings
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-combine_as_imports = true
+profile = "black"
 line_length = 79
 
 [build-system]
