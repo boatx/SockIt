@@ -17,7 +17,6 @@ class TestHttpRequest:
         assert http_request.raw_requestline == b""
 
     def test_init_call_parse_request(self) -> None:
-
         with patch.object(HTTPRequest, "parse_request") as mock_parse_request:
             HTTPRequest()
             mock_parse_request.assert_called_once_with()
