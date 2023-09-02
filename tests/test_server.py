@@ -147,7 +147,6 @@ class TestGenerateHandshakeResponse:
         mock_generate_sec_server_accept_key: Mock,
         http_request: HTTPRequest,
     ) -> None:
-
         assert generate_handshake_response(http_request) == (
             b"HTTP/1.1 101 Switching Protocols\r\n"
             b"Upgrade: websocket\r\n"
@@ -159,7 +158,8 @@ class TestGenerateHandshakeResponse:
         )
 
     def test_generate_handshake_response_raise_key_error(
-        self, http_request: HTTPRequest,
+        self,
+        http_request: HTTPRequest,
     ) -> None:
         http_request.headers = HTTPMessage()
         with pytest.raises(InvalidSecWebsocketKey):

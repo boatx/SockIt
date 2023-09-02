@@ -8,10 +8,10 @@ authors = ["boatx <1446337+boatx@users.noreply.github.com>"]
 python = "^3.7"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.4.3"
+pytest = "^6.2.5"
 coverage = {extras = ["toml"], version = "^5.2"}
 pytest-cov = "^2.10.0"
-black = "^19.10b0"
+black = "^23.3.0"
 flake8 = "^5.0.0"
 flake8-bandit = "^4.1.1"
 flake8-black = "^0.2.0"
@@ -36,10 +36,7 @@ show_missing = true
 known_first_party = ["sockit", "tests"]
 default_section = "THIRDPARTY"
 # black compatible settings
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-combine_as_imports = true
+profile = "black"
 line_length = 79
 
 [build-system]
