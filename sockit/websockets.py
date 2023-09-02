@@ -2,7 +2,7 @@ import ctypes
 import logging
 from typing import NamedTuple, Optional
 
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class WebsocketHeader(ctypes.Union):
@@ -38,7 +38,7 @@ class WebsocketHeader(ctypes.Union):
 class WebsocketRequest:
     def __init__(self, data: bytes) -> None:
         self.header = WebsocketHeader(data)
-        log.info(f"Received request: {self.header}")
+        LOGGER.info("Received request: %s", self.header)
         self.data = data
         self.start_byte = 2
         self.length = self._get_length()

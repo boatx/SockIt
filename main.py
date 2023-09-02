@@ -5,7 +5,7 @@ import sys
 from sockit.server import WebSocketServer
 
 logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-log = logging.getLogger(__name__)
+LOGGER = logging.getLogger(__name__)
 
 
 class Settings:
@@ -17,7 +17,7 @@ def main() -> None:
     loop = asyncio.get_event_loop()
     # Each client connection will create a new protocol instance
     coro = loop.create_server(WebSocketServer, Settings.HOST, Settings.PORT)
-    log.info("start server on {}:{}".format(Settings.HOST, Settings.PORT))
+    LOGGER.info("start server on %s:%s", Settings.HOST, Settings.PORT)
     server = loop.run_until_complete(coro)
     try:
         loop.run_forever()
