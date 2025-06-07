@@ -19,4 +19,4 @@ To test server you can use simple JavaScript client from `client/client.html`.
 
 ## Requirements
 
-* python => 3.7
+* python => 3.9
